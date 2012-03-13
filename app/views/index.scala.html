@@ -1,0 +1,26 @@
+@(runs: List[Run], runForm: Form[String])
+
+@import helper._
+
+@main("Performance reporter") {
+	<h1>@runs.size run(s)</h1>
+
+	<ul>
+	  @runs.map { run =>
+			<li>
+			  @run.label
+
+				@form(routes.Application.deleteRun(run.id)) {
+					<input type="submit" value="Delete">
+				}
+			</li>
+		}
+  </ul>
+
+	<h2>Add new run</h2>
+
+	@form(routes.Application.newRun) {
+		@inputText(runForm("label"))
+		<input type="submit" value="Create">
+	}
+}
