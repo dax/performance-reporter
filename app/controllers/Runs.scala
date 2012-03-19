@@ -13,17 +13,17 @@ import play.api.libs.json.Json._
 
 import models.Run
 
-object Application extends Controller {
+object Runs extends Controller {
   val runForm = Form(
     "label" -> nonEmptyText
   )
 
   def index = Action {
-    Redirect(routes.Application.runs)
+    Redirect(routes.Runs.runs)
   }
 
   def runs = Action {
-    Ok(views.html.index(Run.all(), runForm))
+    Ok(views.html.runs.index(Run.all(), runForm))
   }
 
   def newRun = Action(parse.json) { request =>
@@ -46,6 +46,6 @@ object Application extends Controller {
 
   def deleteRun(id: Long) = Action {
     Run.delete(id)
-    Redirect(routes.Application.runs)
+    Redirect(routes.Runs.runs)
   }
 }

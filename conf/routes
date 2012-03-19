@@ -3,12 +3,12 @@
 # ~~~~
 
 # Home page
-GET     /                               controllers.Application.index
+GET     /                               controllers.Runs.index
 
 # Tasks
-GET     /runs                           controllers.Application.runs
-POST    /runs                           controllers.Application.newRun
-POST    /runs/:id/delete                controllers.Application.deleteRun(id: Long)
+GET     /runs                           controllers.Runs.runs
+POST    /runs                           controllers.Runs.newRun
+POST    /runs/:id/delete                controllers.Runs.deleteRun(id: Long)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file                   controllers.Assets.at(path="/public", file)
