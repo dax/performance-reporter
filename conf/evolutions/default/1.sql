@@ -2,7 +2,7 @@
 
 CREATE SEQUENCE run_id_seq;
 CREATE TABLE run (
-  id integer NOT NULL DEFAULT  nextval('run_id_seq'),
+  id integer NOT NULL DEFAULT nextval('run_id_seq'),
   label varchar(255)
 );
 
