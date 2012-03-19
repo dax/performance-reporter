@@ -2,6 +2,9 @@ import sbt._
 import Keys._
 import PlayProject._
 
+import org.ensime.sbt.Plugin.Settings.ensimeConfig
+import org.ensime.sbt.util.SExp._
+
 object ApplicationBuild extends Build {
   val appName         = "Performance reporter"
   val appVersion      = "1.0-SNAPSHOT"
@@ -11,6 +14,13 @@ object ApplicationBuild extends Build {
   )
 
   val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
-    // Add your own project settings here
+    ensimeConfig := sexp(
+      key(":only-include-in-index"), sexp(
+        "controllers\\..*",
+        "models\\..*",
+        "views\\..*",
+        "play\\..*"
+      )
+    )
   )
 }
