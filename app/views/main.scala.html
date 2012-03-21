@@ -1,15 +1,55 @@
 @(title: String)(content: Html)
 
 <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>@title</title>
+    <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")" />
+    <script src="@routes.Assets.at("javascripts/jquery-1.7.1.min.js")" type="text/javascript"></script>
+    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap/bootstrap.min.css")" />
+    <style>
+      body {
+        padding-top: 60px;
+      }
+    </style>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap/bootstrap-alert.min.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap/bootstrap-button.min.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap/bootstrap-carousel.min.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap/bootstrap-collapse.min.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap/bootstrap-dropdown.min.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap/bootstrap-modal.min.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap/bootstrap-popover.min.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap/bootstrap-scrollspy.min.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap/bootstrap-tab.min.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap/bootstrap-tooltip.min.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap/bootstrap-transition.min.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap/bootstrap-typeahead.min.js")"></script>
+  </head>
 
-<html>
-    <head>
-        <title>@title</title>
-        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
-        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
-        <script src="@routes.Assets.at("javascripts/jquery-1.7.1.min.js")" type="text/javascript"></script>
-    </head>
-    <body>
-        @content
-    </body>
+  <body>
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="#">Performance Reporter</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class="active"><a href="#">Home</a></li>
+              <li class="active"><a href="#">Runs</a></li>
+              <li><a href="#about">About</a></li>
+              <li><a href="#contact">Contact</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      @content
+    </div>
+  </body>
 </html>

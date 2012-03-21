@@ -13,6 +13,16 @@ object ApplicationBuild extends Build {
     "postgresql" % "postgresql" % "8.4-702.jdbc4"
   )
 
+  def customLessEntryPoints(base: File): PathFinder = (
+    (base / "app" / "assets" / "stylesheets" / "bootstrap" * "bootstrap.less") +++
+    (base / "app" / "assets" / "stylesheets" * "*.less")
+  )
+
+  def customJSEntryPoints(base: File): PathFinder = (
+    (base / "app" / "assets" / "javascripts" / "bootstrap" * "*.js") +++
+    (base / "app" / "assets" / "javascripts" * "*.js")
+  )
+
   val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
     ensimeConfig := sexp(
       key(":only-include-in-index"), sexp(
@@ -21,6 +31,8 @@ object ApplicationBuild extends Build {
         "views\\..*",
         "play\\..*"
       )
-    )
+    ),
+    lessEntryPoints <<= baseDirectory(customLessEntryPoints)
+    javascriptEntryPoints << baseDirectory(customJSEntryPoints),
   )
 }
