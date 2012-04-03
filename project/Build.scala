@@ -32,7 +32,7 @@ object ApplicationBuild extends Build {
         "play\\..*"
       )
     ),
-    lessEntryPoints <<= baseDirectory(customLessEntryPoints)
-    javascriptEntryPoints << baseDirectory(customJSEntryPoints),
+    lessEntryPoints <<= baseDirectory(customLessEntryPoints),
+    javascriptEntryPoints <<= baseDirectory(customJSEntryPoints)
   )
 }
