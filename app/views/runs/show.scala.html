@@ -1,0 +1,11 @@
+@(run: Run)
+
+@import helper._
+
+@main("Performance reporter") {
+  <h1>@run.label</h1>
+
+  @form(routes.Runs.delete(run.id.get)) {
+    <input type="submit" value="Delete">
+  }
+}

@@ -1,4 +1,4 @@
-@(runs: List[Run], runForm: Form[String])
+@(runs: List[Run])
 
 @import helper._
 
@@ -10,7 +10,7 @@
       <li>
         @run.label
 
-        @form(routes.Runs.deleteRun(run.id.get)) {
+        @form(routes.Runs.delete(run.id.get)) {
           <input type="submit" value="Delete">
         }
       </li>

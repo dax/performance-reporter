@@ -3,12 +3,20 @@
 # ~~~~
 
 # Home page
-GET     /                               controllers.Runs.index
+GET     /                               controllers.Systems.index
 
-# Tasks
-GET     /runs                           controllers.Runs.runs
-POST    /runs                           controllers.Runs.newRun
-POST    /runs/:id/delete                controllers.Runs.deleteRun(id: Long)
+# Systems
+GET     /systems                        controllers.Systems.list
+GET     /systems/create                 controllers.Systems.create
+GET     /systems/:id                    controllers.Systems.show(id: Long)
+GET     /systems/:id/runs               controllers.Runs.list(id: Long)
+POST    /systems/:id/runs               controllers.Runs.newRun(id: Long)
+POST    /systems                        controllers.Systems.newSystem
+DELETE  /systems/:id                    controllers.Systems.delete(id: Long)
+
+# Runs
+GET     /runs/:id                       controllers.Runs.show(id: Long)
+DELETE  /runs/:id                       controllers.Runs.delete(id: Long)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file                   controllers.Assets.at(path="/public", file)

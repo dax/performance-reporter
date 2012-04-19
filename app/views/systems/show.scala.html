@@ -1,0 +1,17 @@
+@(system : System)
+
+@import helper._
+
+@main("Performance reporter") {
+  <h1>@system.label</h1>
+
+  @form(routes.Systems.delete(system.id.get)) {
+    <input type="submit" value="Delete">
+  }
+
+  <ul>
+    @for(run <- system.runs) {
+    <li>@run.label</li>
+    }
+  </ul>
+}

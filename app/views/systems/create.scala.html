@@ -1,0 +1,13 @@
+@(systemForm: Form[String])
+
+@import helper._
+@import helper.twitterBootstrap._
+
+@main("Performance reporter") {
+  @helper.form(routes.Systems.newSystem) {
+
+    @helper.inputText(systemForm("label"))
+
+    <input type="submit" id="createsystem" value="Create System" />
+  }
+}

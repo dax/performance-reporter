@@ -1,44 +1,56 @@
 import org.specs2.mutable._
 
+import anorm.NotAssigned
+
 import play.api.test._
 import play.api.test.Helpers._
 
 import play.api.libs.json._
 import play.api.libs.json.Json._
 
+import models.Run
+import models.System
+
 class RunControllerSpec extends Specification {
 
   "The Run controller" should {
-    "redirect index request to Runs list" in {
-      val Some(result) = routeAndCall(FakeRequest(GET, "/"))
+		"list Runs of a System" in {
+			running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
+				System.create(System(NotAssigned, "first system)", List()))
+				val Some(result) = routeAndCall(FakeRequest(GET, "/systems/1/runs"))
 
-      status(result) must equalTo(SEE_OTHER)
-      redirectLocation(result) must beSome.which(_ == "/runs")
-    }
+				status(result) must equalTo(OK)
+				contentType(result) must beSome("text/html")
+				charset(result) must beSome("utf-8")
+				contentAsString(result) must contain("0 run(s)")
+			}
+		}
 
-    "respond to the index Action" in {
-      running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
-        val Some(result) = routeAndCall(FakeRequest(GET, "/runs"))
+		"create a new Run from Json" in {
+			running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
+				System.create(System(NotAssigned, "first system", List()))
+				val Some(result) = routeAndCall(
+					FakeRequest(POST, "/systems/1/runs", FakeHeaders(Map("Content-type" -> Seq("application/json"))),
+						Json.parse("""{"label": "test1"}""")
+					))
 
-        status(result) must equalTo(OK)
-        contentType(result) must beSome("text/html")
-        charset(result) must beSome("utf-8")
-      }
-    }
+				status(result) must equalTo(OK)
+				contentType(result) must beSome("application/json")
+				charset(result) must beSome("utf-8")
+				contentAsString(result) must /("id" -> 1)
 
-    "create a new Run from Json" in {
-      running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
-        val Some(result) = routeAndCall(
-          FakeRequest(POST, "/runs", FakeHeaders(Map("Content-type" -> Seq("application/json"))),
-            Json.parse("""{"label": "test1"}""")
-          ))
+				Run.findById(1).map { run =>
+					run.system must equalTo(1)
+					run.label must equalTo("test1")
+				}.getOrElse(failure("Expected Run with id 1 not found"))
 
-        status(result) must equalTo(OK)
-        contentType(result) must beSome("application/json")
-        charset(result) must beSome("utf-8")
-        contentAsString(result) must /("id" -> 1)
-      }
-    }
+				val Some(listResult) = routeAndCall(FakeRequest(GET, "/systems/1/runs"))
 
-  }
+				status(listResult) must equalTo(OK)
+				contentType(listResult) must beSome("text/html")
+				charset(listResult) must beSome("utf-8")
+				contentAsString(listResult) must contain("1 run(s)")
+			}
+		}
+	}
 }

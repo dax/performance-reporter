@@ -1,0 +1,20 @@
+@(systems: List[System])
+
+@import helper._
+@import helper.twitterBootstrap._
+
+@main("Performance reporter") {
+  <h1>@systems.size system(s)</h1>
+
+  <ul>
+    @systems.map { system =>
+      <li>
+        <a href="/systems/@system.id">@system.label</a>
+
+        @form(routes.Systems.delete(system.id.get)) {
+          <input type="submit" value="Delete">
+        }
+      </li>
+    }
+  </ul>
+}

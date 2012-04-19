@@ -14,21 +14,19 @@ import play.api.libs.json.Json._
 import models.Run
 
 object Runs extends Controller {
-  val runForm = Form(
-    "label" -> nonEmptyText
-  )
-
-  def index = Action {
-    Redirect(routes.Runs.runs)
+  def list(systemId: Long) = Action {
+    Ok(views.html.runs.list(Run.findBySystem(systemId)))
   }
 
-  def runs = Action {
-    Ok(views.html.runs.index(Run.all(), runForm))
+	def show(id: Long) = Action {
+		Run.findById(id).map { run =>
+			Ok(views.html.runs.show(run))
+		}.getOrElse(NotFound)
   }
 
-  def newRun = Action(parse.json) { request =>
+  def newRun(systemId: Long) = Action(parse.json) { request =>
     (request.body \ "label").asOpt[String].map { label =>
-      Run.create(Run(NotAssigned, label)).map { run =>
+      Run.create(Run(NotAssigned, label, systemId)).map { run =>
         Ok(toJson(
             Map("id" -> run.id.get)
           ))
@@ -44,8 +42,8 @@ object Runs extends Controller {
     }
   }
 
-  def deleteRun(id: Long) = Action {
+  def delete(id: Long) = Action {
     Run.delete(id)
-    Redirect(routes.Runs.runs)
+    Redirect(routes.Systems.list) // TODO
   }
 }
