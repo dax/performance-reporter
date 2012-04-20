@@ -13,3 +13,5 @@ ALTER TABLE run ADD FOREIGN KEY(system_id) REFERENCES system(id) ON DELETE CASCA
 
 DROP TABLE system;
 DROP SEQUENCE system_id_seq;
+ALTER TABLE run DROP FOREIGN KEY(system_id);
+ALTER TABLE run DROP COLUMN system_id;

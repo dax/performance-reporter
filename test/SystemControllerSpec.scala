@@ -47,8 +47,8 @@ class SystemControllerSpec extends Specification {
 		"show a System with runs" in {
       running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
 				val system = System.create(System(NotAssigned, "first system", List()))
-				Run.create(Run(NotAssigned, "run1", system.get.id.get))
-				Run.create(Run(NotAssigned, "run2", system.get.id.get))
+				Run.create(Run(NotAssigned, "run1", system.get.id.get, List(1, 2, 3)))
+				Run.create(Run(NotAssigned, "run2", system.get.id.get, List(4, 5, 6)))
 
 				val retrievedSystem = System.findById(system.get.id.get).get
 				retrievedSystem.label must equalTo("first system")

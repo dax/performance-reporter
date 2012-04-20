@@ -25,21 +25,26 @@ object Runs extends Controller {
   }
 
   def newRun(systemId: Long) = Action(parse.json) { request =>
-    (request.body \ "label").asOpt[String].map { label =>
-      Run.create(Run(NotAssigned, label, systemId)).map { run =>
-        Ok(toJson(
-            Map("id" -> run.id.get)
-          ))
-     }.getOrElse {
-       BadRequest(toJson(
-           Map("status" -> "KO", "message" -> "Unable to create new Run")
-         ))
-     }
-    }.getOrElse {
-      BadRequest(toJson(
-          Map("status" -> "KO", "message" -> "Missing parameter [label]")
-        ))
-    }
+    ((request.body \ "label").asOpt[String],
+			(request.body \ "values").asOpt[Seq[Int]]) match {
+			case (Some(label), Some(values)) => {
+				Run.create(Run(NotAssigned, label, systemId, values)).map { run =>
+					Ok(toJson(
+							Map("id" -> run.id.get)
+						))
+				}.getOrElse {
+					BadRequest(toJson(
+							Map("status" -> "KO", "message" -> "Unable to create new Run")
+						))
+				}
+
+			}
+			case _ => {
+				BadRequest(toJson(
+						Map("status" -> "KO", "message" -> "Message malformed")
+					))
+			}
+		}
   }
 
   def delete(id: Long) = Action {

@@ -31,7 +31,7 @@ class RunControllerSpec extends Specification {
 				System.create(System(NotAssigned, "first system", List()))
 				val Some(result) = routeAndCall(
 					FakeRequest(POST, "/systems/1/runs", FakeHeaders(Map("Content-type" -> Seq("application/json"))),
-						Json.parse("""{"label": "test1"}""")
+						Json.parse("""{"label": "test1", "values": [1, 2, 3]}""")
 					))
 
 				status(result) must equalTo(OK)
@@ -41,6 +41,7 @@ class RunControllerSpec extends Specification {
 
 				Run.findById(1).map { run =>
 					run.system must equalTo(1)
+					run.values must contain(1, 2, 3).only.inOrder
 					run.label must equalTo("test1")
 				}.getOrElse(failure("Expected Run with id 1 not found"))
 

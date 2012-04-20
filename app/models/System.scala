@@ -28,7 +28,7 @@ object System {
 
   def findById(id: Long): Option[System] = DB.withConnection { implicit c =>
     SQL("""
-			SELECT system.id, system.label, run.id, run.label, run.system_id
+			SELECT system.id, system.label, run.id, run.label, run.system_id, run.values
 			FROM system
 			LEFT OUTER JOIN run ON system.id = run.system_id
 			WHERE system.id = {id}
