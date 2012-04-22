@@ -11,7 +11,7 @@
 
   <ul>
     @for(run <- system.runs) {
-    <li>@run.label</li>
+    <li><a href="/runs/@run.id">@run.label</a></li>
     }
   </ul>
 }
