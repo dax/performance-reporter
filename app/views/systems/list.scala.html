@@ -4,7 +4,11 @@
 @import helper.twitterBootstrap._
 
 @main("Performance reporter") {
-  <h1>@systems.size system(s)</h1>
+  <ul class="breadcrumb">
+    <li class="active">Home</li>
+  </ul>
+
+  <h2>Registered systems</h2>
 
   <ul>
     @systems.map { system =>

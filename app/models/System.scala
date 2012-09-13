@@ -7,11 +7,11 @@ import play.api.db._
 import play.api.Play.current
 
 
-case class System(id: Pk[Long], label: String, runs: Seq[Run]) {
-	def addRun(run: Run): System = {
-		this.runs :+ run
-		this
-	}
+case class System(id: Pk[Long], label: String, runs: List[Run]) {
+  def addRun(run: Run): System = {
+    this.runs :+ run
+    this
+  }
 }
 
 object System {
@@ -23,19 +23,19 @@ object System {
   }
 
   val withRuns = (System.system ~ Run.nullableRun *).map(_.groupBy(_._1).toSeq.headOption.map {
-			case (sys, r) => sys.copy(runs = r.map(_._2).flatten)
-		})
+      case (sys, r) => sys.copy(runs = r.map(_._2).flatten)
+    })
 
   def findById(id: Long): Option[System] = DB.withConnection { implicit c =>
     SQL("""
-			SELECT system.id, system.label, run.id, run.label, run.system_id, run.values
-			FROM system
-			LEFT OUTER JOIN run ON system.id = run.system_id
-			WHERE system.id = {id}
-			""")
-		.on(
-			'id -> id
-		).as(withRuns)
+      SELECT system.id, system.label, run.id, run.label, run.system_id
+      FROM system
+      LEFT OUTER JOIN run ON system.id = run.system_id
+      WHERE system.id = {id}
+      """)
+    .on(
+      'id -> id
+    ).as(withRuns)
   }
 
   def all(): List[System] = DB.withConnection { implicit c =>

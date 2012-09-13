@@ -3,12 +3,23 @@
 @import helper._
 
 @main("Performance reporter") {
-  <h1>@system.label</h1>
+  <ul class="breadcrumb">
+    <li><a href="/">Home</a> <span class="divider">/</span></li>
+    <li class="active">@system.label</li>
+  </ul>
 
-  @form(routes.Systems.delete(system.id.get)) {
-    <input type="submit" value="Delete">
-  }
+  <div class="row show-grid">
+    @form(routes.Systems.delete(system.id.get)) {
+    <div class="span2">
+      <a class="btn btn-small btn-primary" href="/systems/@system.id.get/edit"><i class="icon-pencil"></i> Edit system</a>
+    </div>
+    <div class="offset11">
+      <input class="btn btn-small btn-danger" type="submit" value="Delete" />
+    </div>
+    }
+  </div>
 
+  <h2>Runs for @system.label</h2>
   <ul>
     @for(run <- system.runs) {
     <li><a href="/runs/@run.id">@run.label</a></li>

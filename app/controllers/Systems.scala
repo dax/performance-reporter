@@ -26,28 +26,28 @@ object Systems extends Controller {
     Ok(views.html.systems.list(System.all()))
   }
 
-	def show(id: Long) = Action {
-		System.findById(id).map { system =>
-			Ok(views.html.systems.show(system))
-		}.getOrElse(NotFound)
+  def show(id: Long) = Action {
+    System.findById(id).map { system =>
+      Ok(views.html.systems.show(system))
+    }.getOrElse(NotFound)
   }
 
-	def create = Action {
-		Ok(views.html.systems.create(systemForm))
-	}
+  def create = Action {
+    Ok(views.html.systems.create(systemForm))
+  }
 
   def newSystem = Action { implicit request =>
     systemForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.systems.create(formWithErrors)),
-			label => {
-				System.create(System(NotAssigned, label, List())).map { system =>
-					Redirect(routes.Systems.show(system.id.get))
-				}.getOrElse {
-					BadRequest(views.html.systems.list(System.all())) // TODO : print error
-				}
-			}
+      label => {
+        System.create(System(NotAssigned, label, List())).map { system =>
+          Redirect(routes.Systems.show(system.id.get))
+        }.getOrElse {
+          BadRequest(views.html.systems.list(System.all())) // TODO : print error
+        }
+      }
     )
-	}
+  }
 
   def delete(id: Long) = Action {
     System.delete(id)

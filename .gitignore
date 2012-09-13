@@ -8,4 +8,4 @@ dist
 .classpath
 .project
 .settings
-.ensime
+.ensime*
