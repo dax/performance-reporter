@@ -40,13 +40,14 @@ object Runs extends Controller {
               }.map { metric =>
                 val metricId = metric.id.get
                 val runId = run.id.get
-                metricValues.map { case List(timestamp, value) =>
+                metricValues.foreach {case List(timestamp, value) =>
                   MetricValue.create(MetricValue(NotAssigned, new Date(timestamp),
                       value, metricId, runId)).getOrElse {
 					          BadRequest(toJson(
 							          Map("status" -> "KO", "message" -> "Unable to create new MetricValue")
 						          ))
                   }
+                  case _ => // Do nothing
                 }
               }.getOrElse {
 					      BadRequest(toJson(

@@ -29,10 +29,11 @@ object Run {
   val withMetrics = (Run.run ~ Metric.nullableMetric ~ MetricValue.nullableMetricValue *).map {_.map{
       case anorm.~(anorm.~(run, metricOpt), metricValueOpt) => (run, metricOpt, metricValueOpt)
     }
-    .groupBy(_._1).toSeq.headOption.map {
-      case (run, metric_metricValue) => run.copy(metrics = metric_metricValue.groupBy(_._2).map {
-          case (Some(metric), values) => metric.copy(values = values.flatMap(_._3))
-      }.toList)
+    .groupBy(_._1).toSeq.headOption.map { case (run, metricOpt_metricValues) =>
+      run.copy(metrics = metricOpt_metricValues.groupBy(_._2).map { case (Some(metric), values) =>
+          metric.copy(values = values.flatMap(_._3))
+          case _ => null
+        }.filterNot(_ == null).toList)
     }}
 
   def findById(id: Long): Option[Run] = DB.withConnection { implicit c =>
