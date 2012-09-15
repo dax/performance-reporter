@@ -1,5 +1,8 @@
 package models
 
+import collection._
+import generic.CanBuildFrom
+
 import anorm._
 import anorm.SqlParser._
 
@@ -8,7 +11,25 @@ import play.api.Play.current
 
 case class Run(id: Pk[Long], label: String, systemId: Long, metrics: List[Metric] = List())
 
+class Clusterable[C[A] <: TraversableOnce[A], A](coll: C[A]) {
+  def clusterBy[K, V, That](f: A => (K, V))(implicit cbf: CanBuildFrom[C[A], V, That]): immutable.Map[K, That] = {
+    coll.foldLeft(mutable.Map.empty[K, mutable.Builder[V, That]]) {
+      (acc, e) => {
+        val (key, value) = f(e)
+        acc += (key -> (acc.getOrElseUpdate(key, cbf(coll)) += value))
+      }
+    }.foldLeft(immutable.Map.newBuilder[K, That]) {
+      case (acc, (key, value)) => {
+        acc += ((key, value.result))
+      }
+    }.result
+  }
+}
+
+
 object Run {
+  implicit def clusterable[A, C[A] <: TraversableOnce[A]](coll: C[A]): Clusterable[C, A] = new Clusterable[C, A](coll)
+
   val run = {
     get[Pk[Long]]("run.id") ~
     get[String]("run.label") ~
@@ -26,15 +47,23 @@ object Run {
     }
   }
 
-  val withMetrics = (Run.run ~ Metric.nullableMetric ~ MetricValue.nullableMetricValue *).map {_.map{
-      case anorm.~(anorm.~(run, metricOpt), metricValueOpt) => (run, metricOpt, metricValueOpt)
-    }
-    .groupBy(_._1).toSeq.headOption.map { case (run, metricOpt_metricValues) =>
-      run.copy(metrics = metricOpt_metricValues.groupBy(_._2).map { case (Some(metric), values) =>
-          metric.copy(values = values.flatMap(_._3))
-          case _ => null
-        }.filterNot(_ == null).toList)
-    }}
+  def flattenSet(resultSet: anorm.~[anorm.~[Run, Option[Metric]], Option[MetricValue]]): (Run, Option[Metric], Option[MetricValue]) = resultSet match {
+    case anorm.~(anorm.~(run, metricOpt), metricValueOpt) => (run, metricOpt, metricValueOpt)
+  }
+
+  def createMetrics(metricsAndMetricValues: List[(Option[Metric], Option[MetricValue])]): List[Metric] = {
+    (for ((Some(metric), valueOpts) <- metricsAndMetricValues.clusterBy(e => e._1 -> e._2))
+      yield metric.copy(values = valueOpts.flatMap(e => e))).toList
+  }
+
+  def createRun(runsMetricsAndMetricValues: List[(Run, Option[Metric], Option[MetricValue])]): Option[Run] = {
+    for ((run, metricsAndMetricValues) <- runsMetricsAndMetricValues.clusterBy(e => e._1 -> (e._2, e._3)).toSeq.headOption)
+      yield run.copy(metrics = createMetrics(metricsAndMetricValues))
+  }
+
+  val withMetrics = (Run.run ~ Metric.nullableMetric ~ MetricValue.nullableMetricValue *).map { e =>
+    createRun(e.map(flattenSet))
+  }
 
   def findById(id: Long): Option[Run] = DB.withConnection { implicit c =>
     SQL("""
