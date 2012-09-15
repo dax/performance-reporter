@@ -24,6 +24,7 @@ object ApplicationBuild extends Build {
   )
 
   val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
+    scalaVersion := "2.9.1",
     ensimeConfig := sexp(
       key(":only-include-in-index"), sexp(
         "controllers\\..*",
