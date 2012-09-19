@@ -61,13 +61,13 @@ object Runs extends Controller {
     ((request.body \ "label").asOpt[String],
       (request.body \ "metrics").asOpt[Map[String, List[List[Long]]]]) match {
       case (labelOpt, inputMetricsOpt) => {
-				val result = for (label <- labelOpt.toRight(BadRequest(jsonError("Not acceptable message format"))).right;
+        val result = for (label <- labelOpt.toRight(BadRequest(jsonError("Not acceptable message format"))).right;
                           inputMetrics <- inputMetricsOpt.toRight(BadRequest(jsonError("Not acceptable message format"))).right;
                           system <- System.findById(systemId).orElse {
                                       System.create(System(NotAssigned, "No Label", List()))
                                     }.toRight(InternalServerError(jsonError("An error occurred while creating a System"))).right;
                           systemId <- system.id.toOption.toRight(InternalServerError(jsonError("Error XXX"))).right;
-  				                run <- Run.create(Run(NotAssigned, label, systemId)).toRight(
+                          run <- Run.create(Run(NotAssigned, label, systemId)).toRight(
                                    InternalServerError(jsonError("An error occurred while creating a Run"))).right;
                           runId <- run.id.toOption.toRight(InternalServerError(jsonError("Error XXX"))).right;
                           metrics <- listToEither(for ((metricLabel, metricValues) <- inputMetrics)
