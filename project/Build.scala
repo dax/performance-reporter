@@ -10,7 +10,8 @@ object ApplicationBuild extends Build {
   val appVersion      = "1.0-SNAPSHOT"
 
   val appDependencies = Seq(
-    "postgresql" % "postgresql" % "8.4-702.jdbc4"
+    "postgresql" % "postgresql" % "8.4-702.jdbc4",
+    "org.scalaz" %% "scalaz-core" % "6.0.4"
   )
 
   def customLessEntryPoints(base: File): PathFinder = (

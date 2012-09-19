@@ -28,7 +28,7 @@ class RunControllerSpec extends Specification {
 
     "create a new Run from Json" in {
       running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
-        System.create(System(NotAssigned, "first system", List()))
+//        System.create(System(NotAssigned, "first system", List()))
         val Some(result) = routeAndCall(
           FakeRequest(POST, "/systems/1/runs", FakeHeaders(Map("Content-type" -> Seq("application/json"))),
             Json.parse("""{
