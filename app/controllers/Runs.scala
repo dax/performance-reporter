@@ -29,11 +29,11 @@ object Runs extends Controller {
     ((request.body \ "label").asOpt[String],
       (request.body \ "metrics").asOpt[Map[String, List[List[Long]]]]) match {
       case (Some(label), Some(inputMetrics)) => {
-				System.findById(systemId).orElse {
-					System.create(System(NotAssigned, "No Label", List()))
-				}.map { system =>
+        System.findById(systemId).orElse {
+          System.create(System(NotAssigned, "No Label", List()))
+        }.map { system =>
           val systemId = system.id.get
-				  Run.create(Run(NotAssigned, label, systemId)).map { run =>
+          Run.create(Run(NotAssigned, label, systemId)).map { run =>
             val values = inputMetrics.map { case (metricLabel, metricValues) =>
               Metric.findByLabelAndSystem(metricLabel, systemId).orElse {
                 Metric.create(Metric(NotAssigned, metricLabel, systemId))
@@ -43,31 +43,31 @@ object Runs extends Controller {
                 metricValues.foreach {case List(timestamp, value) =>
                   MetricValue.create(MetricValue(NotAssigned, new Date(timestamp),
                       value, metricId, runId)).getOrElse {
-					          BadRequest(toJson(
-							          Map("status" -> "KO", "message" -> "Unable to create new MetricValue")
-						          ))
+                    BadRequest(toJson(
+                        Map("status" -> "KO", "message" -> "Unable to create new MetricValue")
+                      ))
                   }
                   case _ => // Do nothing
                 }
               }.getOrElse {
-					      BadRequest(toJson(
-							      Map("status" -> "KO", "message" -> "Unable to create new Metric")
-						      ))
+                BadRequest(toJson(
+                    Map("status" -> "KO", "message" -> "Unable to create new Metric")
+                  ))
               }
             }
-					  Ok(toJson(
-							  Map("id" -> run.id.get)
-						  ))
+            Ok(toJson(
+                Map("id" -> run.id.get)
+              ))
           }.getOrElse {
-					  BadRequest(toJson(
-							  Map("status" -> "KO", "message" -> "Unable to create new Run")
-						  ))
+            BadRequest(toJson(
+                Map("status" -> "KO", "message" -> "Unable to create new Run")
+              ))
           }
-				}.getOrElse {
-					BadRequest(toJson(
-							Map("status" -> "KO", "message" -> "Unable to create new System")
-						))
-				}
+        }.getOrElse {
+          BadRequest(toJson(
+              Map("status" -> "KO", "message" -> "Unable to create new System")
+            ))
+        }
       }
       case _ => {
         BadRequest(toJson(
