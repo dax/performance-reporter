@@ -26,6 +26,10 @@ object System {
       case (sys, r) => sys.copy(runs = r.map(_._2).flatten)
     })
 
+  def findByIdOrCreate(id: Long): Option[System] = findById(id).orElse {
+    System.create(System(NotAssigned, "No Label", List()))
+  }
+
   def findById(id: Long): Option[System] = DB.withConnection { implicit c =>
     SQL("""
       SELECT system.id, system.label, run.id, run.label, run.system_id

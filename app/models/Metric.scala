@@ -41,6 +41,11 @@ object Metric {
     ).as(metric.singleOpt)
   }
 
+  def findByLabelAndSystemOrCreate(label: String, systemId: Long): Option[Metric] =
+    findByLabelAndSystem(label, systemId).orElse {
+      Metric.create(Metric(NotAssigned, label, systemId))
+    }
+
   def findByLabelAndSystem(label: String, systemId: Long): Option[Metric] = {
     DB.withConnection { implicit c =>
       SQL("""

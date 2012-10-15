@@ -13,13 +13,32 @@ import play.api.data._
 import play.api.data.Forms._
 
 import play.api.libs.json._
+import play.api.libs.json.util._
+import play.api.libs.json.Reads._
 import play.api.libs.json.Json._
 
 import models._
 
+
 object Runs extends Controller {
-  val JSON_ERROR = Map("status" -> "OK")
-  val JSON_SUCESS = Map("status" -> "KO")
+  case class JsonRun(label: String, metrics: Map[String, List[List[Long]]])
+  implicit val runReads: Reads[JsonRun] = (
+    (__ \ "label").read[String] and
+    (__ \ "metrics").read(map(
+        Reads.list[List[Long]](
+          Reads.list[Long] provided (minLength[List[Long]](2) andThen maxLength[List[Long]](2))
+        )
+      ))
+  )(JsonRun)
+
+  val JSON_ERROR = Map("status" -> toJson("KO"))
+  val JSON_SUCESS = Map("status" -> toJson("OK"))
+
+  private def jsonError(message: String) = toJson(JSON_ERROR.updated("message", toJson(message)))
+  private def jsonError(messages: List[String]) = toJson(JSON_ERROR.updated("messages", toJson(messages)))
+
+  private def listToValidation[A, B](listOfValidations: Seq[ValidationNEL[A, B]]): ValidationNEL[A, Seq[B]] =
+    listOfValidations.sequence[PartialApply1Of2[ValidationNEL, A]#Apply, B]
 
   def list(systemId: Long) = Action {
     Ok(views.html.runs.list(Run.findBySystem(systemId)))
@@ -31,52 +50,52 @@ object Runs extends Controller {
     }.getOrElse(NotFound)
   }
 
-  def jsonError(message: String) = toJson(JSON_ERROR ++ List("message" -> message))
-  def listToEither[A, B](listOfEithers: Traversable[Either[A, B]]): Either[A, Traversable[B]] = {
-    listOfEithers.partition(_.isLeft) match {
-      case (Nil, listOfRights) => Right(for (Right(e) <- listOfRights) yield e)
-      case (listOfLefts, _) => Left((for (Left(e) <- listOfLefts) yield e).head)
-    }
-  }
-
-  def createMetricValue(timestamp: Long, value: Long, metricId: Long, runId: Long): Either[SimpleResult[JsValue], MetricValue] = {
-    for (metricValue <- MetricValue.create(MetricValue(NotAssigned, new Date(timestamp),
-          value, metricId, runId))
-      .toRight(InternalServerError(jsonError("An error occured while creating a MetricValue"))).right)
-      yield metricValue
-  }
-
-  def createMetric(metricLabel: String, metricValues: List[List[Long]], systemId: Long, runId: Long): Either[SimpleResult[JsValue], Metric] = {
-    for (metric <- Metric.findByLabelAndSystem(metricLabel, systemId).orElse {
-        Metric.create(Metric(NotAssigned, metricLabel, systemId))
-      }.toRight(InternalServerError(jsonError("An error occurred while creating a Metric"))).right;
-      metricId <- metric.id.toOption.toRight(InternalServerError(jsonError("Error XXX"))).right;
-      metricValues <- listToEither(for (List(timestamp, value) <- metricValues)
-        yield createMetricValue(timestamp, value, metricId, runId)
-      ))
-      yield metric
-  }
 
   def newRun(systemId: Long) = Action(parse.json) { request =>
-    ((request.body \ "label").asOpt[String],
-      (request.body \ "metrics").asOpt[Map[String, List[List[Long]]]]) match {
-      case (labelOpt, inputMetricsOpt) => {
-        val result = for (label <- labelOpt.toRight(BadRequest(jsonError("Not acceptable message format"))).right;
-                          inputMetrics <- inputMetricsOpt.toRight(BadRequest(jsonError("Not acceptable message format"))).right;
-                          system <- System.findById(systemId).orElse {
-                                      System.create(System(NotAssigned, "No Label", List()))
-                                    }.toRight(InternalServerError(jsonError("An error occurred while creating a System"))).right;
-                          systemId <- system.id.toOption.toRight(InternalServerError(jsonError("Error XXX"))).right;
-                          run <- Run.create(Run(NotAssigned, label, systemId)).toRight(
-                                   InternalServerError(jsonError("An error occurred while creating a Run"))).right;
-                          runId <- run.id.toOption.toRight(InternalServerError(jsonError("Error XXX"))).right;
-                          metrics <- listToEither(for ((metricLabel, metricValues) <- inputMetrics)
-                            yield createMetric(metricLabel, metricValues, systemId, runId)))
-                       yield runId
+    request.body.validate[JsonRun].fold(
+      error => BadRequest(jsonError(error.toString)),
+      jsonRun => {
+        def createMetrics(systemId: Long, runId: Long): ValidationNEL[String, Seq[Metric]] = {
+          def createMetricValues(metricValues: List[List[Long]], metricId: Long) = {
+            def createMetricValue(timestamp: Date, value: Long) =
+              for (metricValue <- MetricValue.create(
+                                    MetricValue(NotAssigned, timestamp, value, metricId, runId)
+                                  ).toSuccess(NonEmptyList("An error occured while creating a MetricValue")))
+              yield metricValue
 
-        result.fold(e => e, r => Ok(toJson(Map("id" -> r))))
+            listToValidation(for (List(timestamp, value) <- metricValues)
+              yield createMetricValue(new Date(timestamp), value)
+            )
+          }
+
+          def createMetric(metricLabel: String, values: List[List[Long]]) =
+            for (metric       <- Metric.findByLabelAndSystemOrCreate(metricLabel, systemId)
+                                 .toSuccess(NonEmptyList("An error occurred while creating a Metric"));
+                 metricId     <- metric.id.toOption.toSuccess(NonEmptyList("Error XXX"));
+                 metricValues <- createMetricValues(values, metricId))
+            yield metric
+
+          listToValidation(
+            (for ((metricLabel, values) <- jsonRun.metrics)
+              yield createMetric(metricLabel, values)).toSeq
+          )
+        }
+
+        val result: ValidationNEL[String, Long] =
+          for (system  <- System.findByIdOrCreate(systemId)
+                          .toSuccess(NonEmptyList("An error occurred while creating a System"));
+               run     <- Run.create(Run(NotAssigned, jsonRun.label, systemId))
+                          .toSuccess(NonEmptyList("An error occurred while creating a Run"));
+               runId   <- run.id.toOption.toSuccess(NonEmptyList("Error XXX"));
+               metrics <- createMetrics(systemId, runId))
+          yield runId
+
+        result.fold(
+          errors => InternalServerError(jsonError(errors.list)),
+          runId => Ok(toJson(Map("id" -> runId)))
+        )
       }
-    }
+    )
   }
 
   def delete(id: Long) = Action {

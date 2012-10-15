@@ -6,7 +6,7 @@ import org.ensime.sbt.Plugin.Settings.ensimeConfig
 import org.ensime.sbt.util.SExp._
 
 object ApplicationBuild extends Build {
-  val appName         = "Performance reporter"
+  val appName         = "Performance_reporter"
   val appVersion      = "1.0-SNAPSHOT"
 
   val appDependencies = Seq(
@@ -25,7 +25,7 @@ object ApplicationBuild extends Build {
   )
 
   val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
-    scalaVersion := "2.9.1",
+    scalaVersion := "2.9.2",
     ensimeConfig := sexp(
       key(":only-include-in-index"), sexp(
         "controllers\\..*",

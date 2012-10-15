@@ -23,9 +23,9 @@ class RunSpec extends Specification {
 
   "A Run" should {
     "be created" in {
-      val runMetadata = List(MetaDataItem("run.id", false, classOf[Long].getName),
-        MetaDataItem("run.label", false, classOf[String].getName),
-        MetaDataItem("run.system_id", false, classOf[Long].getName))
+      val runMetadata = List(MetaDataItem(ColumnName("run.id", None), false, classOf[Long].getName),
+        MetaDataItem(ColumnName("run.label", None), false, classOf[String].getName),
+        MetaDataItem(ColumnName("run.system_id", None), false, classOf[Long].getName))
       "from a row" in {
         val parsedRow = Run.run(MockRow(List(1, "run", 1), MetaData(runMetadata)))
 
@@ -33,14 +33,14 @@ class RunSpec extends Specification {
       }
 
       "with runs from a row" in {
-        val metricValueMetadata = List(MetaDataItem("metric_value.id", true, classOf[Long].getName),
-          MetaDataItem("metric_value.datetime", true, classOf[Date].getName),
-          MetaDataItem("metric_value.value", true, classOf[Long].getName),
-          MetaDataItem("metric_value.metric_id", true, classOf[Long].getName),
-          MetaDataItem("metric_value.run_id", true, classOf[Long].getName))
-        val metricMetadata = List(MetaDataItem("metric.id", true, classOf[Long].getName),
-          MetaDataItem("metric.label", true, classOf[String].getName),
-          MetaDataItem("metric.system_id", true, classOf[Long].getName))
+        val metricValueMetadata = List(MetaDataItem(ColumnName("metric_value.id", None), true, classOf[Long].getName),
+          MetaDataItem(ColumnName("metric_value.datetime", None), true, classOf[Date].getName),
+          MetaDataItem(ColumnName("metric_value.value", None), true, classOf[Long].getName),
+          MetaDataItem(ColumnName("metric_value.metric_id", None), true, classOf[Long].getName),
+          MetaDataItem(ColumnName("metric_value.run_id", None), true, classOf[Long].getName))
+        val metricMetadata = List(MetaDataItem(ColumnName("metric.id", None), true, classOf[Long].getName),
+          MetaDataItem(ColumnName("metric.label", None), true, classOf[String].getName),
+          MetaDataItem(ColumnName("metric.system_id", None), true, classOf[Long].getName))
 
         val metadata = MetaData(runMetadata ++ metricValueMetadata ++ metricMetadata)
 

@@ -17,8 +17,8 @@ class SystemSpec extends Specification {
     "be created from a row" in {
       val parsedRow = System.system(MockRow(List(1, "system"),
           MetaData(List(
-              MetaDataItem("system.id", false, classOf[Long].getName),
-              MetaDataItem("system.label", false, classOf[String].getName)
+              MetaDataItem(ColumnName("system.id", None), false, classOf[Long].getName),
+              MetaDataItem(ColumnName("system.label", None), false, classOf[String].getName)
           ))))
 
       parsedRow must beEqualTo(Success(System(Id(1), "system", List())))
@@ -28,11 +28,11 @@ class SystemSpec extends Specification {
       val parsedRow = System.withRuns(Stream(
           SqlRow(
             MetaData(List(
-                MetaDataItem("system.id", false, classOf[Long].getName),
-                MetaDataItem("system.label", false, classOf[String].getName),
-                MetaDataItem("run.id", true, classOf[Long].getName),
-                MetaDataItem("run.label", true, classOf[String].getName),
-                MetaDataItem("run.system_id", true, classOf[Long].getName)
+                MetaDataItem(ColumnName("system.id", None), false, classOf[Long].getName),
+                MetaDataItem(ColumnName("system.label", None), false, classOf[String].getName),
+                MetaDataItem(ColumnName("run.id", None), true, classOf[Long].getName),
+                MetaDataItem(ColumnName("run.label", None), true, classOf[String].getName),
+                MetaDataItem(ColumnName("run.system_id", None), true, classOf[Long].getName)
               )),
             List(1, "system", 11, "run11", 1)
           )))

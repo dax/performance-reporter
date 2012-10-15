@@ -37,6 +37,7 @@ object Systems extends Controller {
   }
 
   def newSystem = Action { implicit request =>
+    println(systemForm)
     systemForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.systems.create(formWithErrors)),
       label => {
