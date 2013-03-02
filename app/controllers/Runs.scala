@@ -10,11 +10,21 @@ import play.api.data._
 import play.api.data.Forms._
 
 import play.api.libs.json._
+import play.api.libs.json.util._
+import play.api.libs.json.Reads._
 import play.api.libs.json.Json._
+import play.api.libs.functional.syntax._
 
 import models._
+import models.Run._
 
 object Runs extends Controller {
+  val JSON_ERROR = Map("status" -> toJson("KO"))
+  val JSON_SUCESS = Map("status" -> toJson("OK"))
+
+  private def jsonError(message: String) = toJson(JSON_ERROR.updated("message", toJson(message)))
+  private def jsonError(messages: List[String]) = toJson(JSON_ERROR.updated("messages", toJson(messages)))
+
   def list(systemId: Long) = Action {
     Ok(views.html.runs.list(Run.findBySystem(systemId)))
   }
@@ -26,54 +36,13 @@ object Runs extends Controller {
   }
 
   def newRun(systemId: Long) = Action(parse.json) { request =>
-    ((request.body \ "label").asOpt[String],
-      (request.body \ "metrics").asOpt[Map[String, List[List[Long]]]]) match {
-      case (Some(label), Some(inputMetrics)) => {
-        System.findById(systemId).orElse {
-          System.create(System(NotAssigned, "No Label", List()))
-        }.map { system =>
-          val systemId = system.id.get
-          Run.create(Run(NotAssigned, label, systemId)).map { run =>
-            val values = inputMetrics.map { case (metricLabel, metricValues) =>
-              Metric.findByLabelAndSystem(metricLabel, systemId).orElse {
-                Metric.create(Metric(NotAssigned, metricLabel, systemId))
-              }.map { metric =>
-                val metricId = metric.id.get
-                val runId = run.id.get
-                metricValues.foreach {case List(timestamp, value) =>
-                  MetricValue.create(MetricValue(NotAssigned, new Date(timestamp),
-                      value, metricId, runId)).getOrElse {
-                    BadRequest(toJson(
-                        Map("status" -> "KO", "message" -> "Unable to create new MetricValue")
-                      ))
-                  }
-                  case _ => // Do nothing
-                }
-              }.getOrElse {
-                BadRequest(toJson(
-                    Map("status" -> "KO", "message" -> "Unable to create new Metric")
-                  ))
-              }
-            }
-            Ok(toJson(
-                Map("id" -> run.id.get)
-              ))
-          }.getOrElse {
-            BadRequest(toJson(
-                Map("status" -> "KO", "message" -> "Unable to create new Run")
-              ))
-          }
-        }.getOrElse {
-          BadRequest(toJson(
-              Map("status" -> "KO", "message" -> "Unable to create new System")
-            ))
-        }
-      }
-      case _ => {
-        BadRequest(toJson(
-            Map("status" -> "KO", "message" -> "Message malformed")
-          ))
-      }
+    request.body.validate[JsonRun].map { jsonRun =>
+      Run.fromJson(jsonRun, systemId).fold(
+        errors => InternalServerError(jsonError(errors.list)),
+        run => Ok(toJson(Map("id" -> run.id.get)))
+      )
+    }.recoverTotal {
+      error => BadRequest(JsError.toFlatJson(error))
     }
   }
 

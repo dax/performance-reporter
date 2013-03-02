@@ -38,15 +38,15 @@ object Systems extends Controller {
 
   def newSystem = Action { implicit request =>
     systemForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(views.html.systems.create(formWithErrors)),
-      label => {
-        System.create(System(NotAssigned, label, List())).map { system =>
-          Redirect(routes.Systems.show(system.id.get))
+      formWithErrors =>
+        BadRequest(views.html.systems.create(formWithErrors)),
+      label =>
+        System.create(label).map {
+          system => Redirect(routes.Systems.show(system.id.get))
         }.getOrElse {
           BadRequest(views.html.systems.list(System.all())) // TODO : print error
         }
-      }
-    )
+      )
   }
 
   def delete(id: Long) = Action {

@@ -26,6 +26,10 @@ object System {
       case (sys, r) => sys.copy(runs = r.map(_._2).flatten)
     })
 
+  def findByIdOrInsert(id: Long): Option[System] = findById(id).orElse {
+    System.insert(System(NotAssigned, "No Label", List()))
+  }
+
   def findById(id: Long): Option[System] = DB.withConnection { implicit c =>
     SQL("""
       SELECT system.id, system.label, run.id, run.label, run.system_id
@@ -42,7 +46,7 @@ object System {
     SQL("SELECT system.id, system.label FROM system").as(system *)
   }
 
-  def create(system: System): Option[System] = {
+  def insert(system: System): Option[System] = {
     DB.withConnection { implicit c =>
       SQL("INSERT INTO system (label) VALUES ({label})").on(
         'label -> system.label
@@ -59,4 +63,6 @@ object System {
       ).executeUpdate()
     }
   }
+
+  def create(label: String) = insert(System(NotAssigned, label, List()))
 }

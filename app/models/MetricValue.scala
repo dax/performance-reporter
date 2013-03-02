@@ -1,6 +1,8 @@
 package models
 
-import java.util.{Date}
+import scalaz._
+import Scalaz._
+import java.util.Date
 
 import anorm._
 import anorm.SqlParser._
@@ -34,7 +36,7 @@ object MetricValue {
     }
   }
 
-  def create(metricValue: MetricValue): Option[MetricValue] = {
+  def insert(metricValue: MetricValue): Option[MetricValue] = {
     DB.withConnection { implicit c =>
       SQL("""
         INSERT INTO metric_value (datetime, value, metric_id, run_id)
@@ -57,5 +59,10 @@ object MetricValue {
         'run -> runId
       ).executeUpdate()
     }
+  }
+
+  def create(runId: Long, metricId: Long, timestamp: Date, value: Long): ValidationNEL[String, MetricValue] = {
+    MetricValue.insert(MetricValue(NotAssigned, timestamp, value, metricId, runId))
+      .toSuccess(NonEmptyList("An error occured while creating a MetricValue"))
   }
 }

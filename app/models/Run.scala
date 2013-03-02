@@ -1,5 +1,8 @@
 package models
 
+import scalaz._
+import Scalaz._
+
 import collection._
 import generic.CanBuildFrom
 
@@ -9,7 +12,15 @@ import anorm.SqlParser._
 import play.api.db._
 import play.api.Play.current
 
+import play.api.libs.json._
+import play.api.libs.json.util._
+import play.api.libs.json.Reads._
+import play.api.libs.json.Json._
+import play.api.libs.functional.syntax._
+
 case class Run(id: Pk[Long], label: String, systemId: Long, metrics: List[Metric] = List())
+
+case class JsonRun(label: String, metrics: Map[String, List[List[Long]]])
 
 class Clusterable[C[A] <: TraversableOnce[A], A](coll: C[A]) {
   def clusterBy[K, V, That](f: A => (K, V))(implicit cbf: CanBuildFrom[C[A], V, That]): immutable.Map[K, That] = {
@@ -28,6 +39,18 @@ class Clusterable[C[A] <: TraversableOnce[A], A](coll: C[A]) {
 
 
 object Run {
+  implicit val runReads: Reads[JsonRun] = (
+    (__ \ "label").read[String] and
+    (__ \ "metrics").read(map(
+        Reads.list[List[Long]](
+          Reads.list[Long]
+        )
+      ))
+  )(JsonRun)
+
+  private def listToValidation[A, B](listOfValidations: Seq[ValidationNEL[A, B]]): ValidationNEL[A, Seq[B]] =
+  listOfValidations.sequence[PartialApply1Of2[ValidationNEL, A]#Apply, B]
+
   implicit def clusterable[A, C[A] <: TraversableOnce[A]](coll: C[A]): Clusterable[C, A] = new Clusterable[C, A](coll)
 
   val run = {
@@ -87,7 +110,7 @@ object Run {
     ).as(run *)
   }
 
-  def create(run: Run): Option[Run] = {
+  def insert(run: Run): Option[Run] = {
     DB.withConnection { implicit c =>
       SQL("""
         INSERT INTO run (label, system_id)
@@ -97,7 +120,7 @@ object Run {
         'system -> run.systemId
       ).executeInsert().map { id =>
         run.copy(id = Id(id))
-     }
+      }
     }
   }
 
@@ -107,5 +130,22 @@ object Run {
         'id -> id
       ).executeUpdate()
     }
+  }
+
+  def fromJson(jsonRun: JsonRun, systemId: Long) = create(jsonRun.label, jsonRun.metrics, systemId)
+
+  def create(label: String, metrics: Map[String, List[List[Long]]], systemId: Long) = {
+    def createMetrics(runId: Long): ValidationNEL[String, Seq[Metric]] = listToValidation(
+      (for ((metricLabel, values) <- metrics)
+        yield Metric.create(runId, systemId, metricLabel, values)).toSeq
+    )
+
+    for (system  <- System.findByIdOrInsert(systemId)
+      .toSuccess(NonEmptyList("An error occurred while creating a System"));
+      run     <- Run.insert(Run(NotAssigned, label, systemId))
+      .toSuccess(NonEmptyList("An error occurred while creating a Run"));
+      runId   <- run.id.toOption.toSuccess(NonEmptyList(""));
+      metrics <- createMetrics(runId))
+    yield run
   }
 }

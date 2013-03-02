@@ -1,16 +1,19 @@
 import sbt._
 import Keys._
-import PlayProject._
+import play.Project._
 
 import org.ensime.sbt.Plugin.Settings.ensimeConfig
 import org.ensime.sbt.util.SExp._
 
 object ApplicationBuild extends Build {
-  val appName         = "Performance reporter"
+  val appName         = "Performance_reporter"
   val appVersion      = "1.0-SNAPSHOT"
 
   val appDependencies = Seq(
-    "postgresql" % "postgresql" % "8.4-702.jdbc4"
+    jdbc, anorm,
+    "postgresql" % "postgresql" % "8.4-702.jdbc4",
+    "org.scalaz" %% "scalaz-core" % "6.0.4"
+//    "com.typesafe" %% "slick" % "1.0.0"
   )
 
   def customLessEntryPoints(base: File): PathFinder = (
@@ -23,8 +26,8 @@ object ApplicationBuild extends Build {
     (base / "app" / "assets" / "javascripts" * "*.js")
   )
 
-  val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
-    scalaVersion := "2.9.1",
+  val main = play.Project(appName, appVersion, appDependencies).settings(
+    scalaVersion := "2.10.0",
     ensimeConfig := sexp(
       key(":only-include-in-index"), sexp(
         "controllers\\..*",

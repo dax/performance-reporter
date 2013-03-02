@@ -8,6 +8,7 @@ import play.api.test.Helpers._
 
 import play.api.libs.json._
 import play.api.libs.json.Json._
+import play.api.{Play, Application}
 
 import models._
 
@@ -15,9 +16,9 @@ class RunControllerSpec extends Specification {
 
   "The Run controller" should {
     "list Runs of a System" in {
-      running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
-        System.create(System(NotAssigned, "first system)", List()))
-        val Some(result) = routeAndCall(FakeRequest(GET, "/systems/1/runs"))
+      running(FakeApplication()) {
+        System.create("first system")
+        val Some(result) = route(FakeRequest(GET, "/systems/1/runs"))
 
         status(result) must equalTo(OK)
         contentType(result) must beSome("text/html")
@@ -27,22 +28,25 @@ class RunControllerSpec extends Specification {
     }
 
     "create a new Run from Json" in {
-      running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
-        System.create(System(NotAssigned, "first system", List()))
-        val Some(result) = routeAndCall(
-          FakeRequest(POST, "/systems/1/runs", FakeHeaders(Map("Content-type" -> Seq("application/json"))),
-            Json.parse("""{
-              "label": "test1",
-              "metrics": {
-                "nginx": [[1335164577000, 1],
-                          [1335164578000, 2],
-                          [1335164579000, 3]],
-                "app": [[1335164580000, 4],
-                        [1335164581000, 5],
-                        [1335164582000, 6]]
-              }
-              }""")
-          ))
+      running(FakeApplication()) {
+        val request = FakeRequest(POST, "/systems/1/runs")
+          .withHeaders("Content-Type" -> "application/json")
+          .withJsonBody(Json.obj(
+              "label" -> "test1",
+              "metrics" -> Json.obj(
+                "nginx" -> Json.arr(
+                  Json.arr(1335164577000L, 1),
+                  Json.arr(1335164578000L, 2),
+                  Json.arr(1335164579000L, 3)
+                ),
+                "app" -> Json.arr(
+                  Json.arr(1335164580000L, 4),
+                  Json.arr(1335164581000L, 5),
+                  Json.arr(1335164582000L, 6)
+                )
+              )
+            ))
+        val Some(result) = route(request, request.body.asJson.get)
 
         status(result) must equalTo(OK)
         contentType(result) must beSome("application/json")
@@ -63,7 +67,7 @@ class RunControllerSpec extends Specification {
                 MetricValue(Id(3), new Date(1335164579000L), 3, 1, run.id.get))))
         }.getOrElse(failure("Expected Run with id 1 not found"))
 
-        val Some(listResult) = routeAndCall(FakeRequest(GET, "/systems/1/runs"))
+        val Some(listResult) = route(FakeRequest(GET, "/systems/1/runs"))
 
         status(listResult) must equalTo(OK)
         contentType(listResult) must beSome("text/html")
