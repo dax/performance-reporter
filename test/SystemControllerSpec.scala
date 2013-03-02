@@ -24,7 +24,7 @@ class SystemControllerSpec extends Specification {
 
     "list Systems" in {
       running(FakeApplication()) {
-        System.create(System(NotAssigned, "first system", List()))
+        System.create("first system")
         val Some(result) = route(FakeRequest(GET, "/systems"))
 
         status(result) must equalTo(OK)
@@ -52,11 +52,11 @@ class SystemControllerSpec extends Specification {
 
     "show a System with runs" in {
       running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
-        val system = System.create(System(NotAssigned, "first system", List()))
-        Run.create(Run(NotAssigned, "run1", system.get.id.get))
-        Run.create(Run(NotAssigned, "run2", system.get.id.get))
+        val systemId = System.create("first system").get.id.get
+        Run.create("run1", Map.empty[String, List[List[Long]]], systemId)
+        Run.create("run2", Map.empty[String, List[List[Long]]], systemId)
 
-        val retrievedSystem = System.findById(system.get.id.get).get
+        val retrievedSystem = System.findById(systemId).get
         retrievedSystem.label must equalTo("first system")
         retrievedSystem.runs.length must equalTo(2)
         retrievedSystem.runs(0).label must equalTo("run1")

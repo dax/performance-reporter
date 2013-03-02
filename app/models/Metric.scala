@@ -1,5 +1,9 @@
 package models
 
+import scalaz._
+import Scalaz._
+import java.util.Date
+
 import anorm._
 import anorm.SqlParser._
 
@@ -9,6 +13,9 @@ import play.api.Play.current
 case class Metric(id: Pk[Long], label: String, systemId: Long, values: List[MetricValue] = List())
 
 object Metric {
+  private def listToValidation[A, B](listOfValidations: Seq[ValidationNEL[A, B]]): ValidationNEL[A, Seq[B]] =
+  listOfValidations.sequence[PartialApply1Of2[ValidationNEL, A]#Apply, B]
+
   val metric = {
     get[Pk[Long]]("metric.id") ~
     get[String]("metric.label") ~
@@ -41,9 +48,9 @@ object Metric {
     ).as(metric.singleOpt)
   }
 
-  def findByLabelAndSystemOrCreate(label: String, systemId: Long): Option[Metric] =
+  def findByLabelAndSystemOrInsert(label: String, systemId: Long): Option[Metric] =
     findByLabelAndSystem(label, systemId).orElse {
-      Metric.create(Metric(NotAssigned, label, systemId))
+      Metric.insert(Metric(NotAssigned, label, systemId))
     }
 
   def findByLabelAndSystem(label: String, systemId: Long): Option[Metric] = {
@@ -60,7 +67,7 @@ object Metric {
     }
   }
 
-  def create(metric: Metric): Option[Metric] = {
+  def insert(metric: Metric): Option[Metric] = {
     DB.withConnection { implicit c =>
       SQL("""
         INSERT INTO metric (label, system_id)
@@ -80,5 +87,18 @@ object Metric {
         'id -> id
       ).executeUpdate()
     }
+  }
+
+  def create(runId: Long, systemId: Long, metricLabel: String, values: List[List[Long]]): ValidationNEL[String, Metric] = {
+    def createMetricValues(metricValues: List[List[Long]], metricId: Long) = listToValidation(
+      for (List(timestamp, value) <- metricValues)
+        yield MetricValue.create(runId, metricId, new Date(timestamp), value)
+      )
+
+    for (metric    <- Metric.findByLabelAndSystemOrInsert(metricLabel, systemId)
+      .toSuccess(NonEmptyList("An error occurred while creating a Metric"));
+      metricId     <- metric.id.toOption.toSuccess(NonEmptyList(""));
+      metricValues <- createMetricValues(values, metricId))
+    yield metric
   }
 }

@@ -17,7 +17,7 @@ class RunControllerSpec extends Specification {
   "The Run controller" should {
     "list Runs of a System" in {
       running(FakeApplication()) {
-        System.create(System(NotAssigned, "first system)", List()))
+        System.create("first system")
         val Some(result) = route(FakeRequest(GET, "/systems/1/runs"))
 
         status(result) must equalTo(OK)
