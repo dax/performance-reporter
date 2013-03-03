@@ -10,10 +10,9 @@ object ApplicationBuild extends Build {
   val appVersion      = "1.0-SNAPSHOT"
 
   val appDependencies = Seq(
-    jdbc, anorm,
+    jdbc,
     "postgresql" % "postgresql" % "8.4-702.jdbc4",
     "org.scalaz" %% "scalaz-core" % "6.0.4"
-//    "com.typesafe" %% "slick" % "1.0.0"
   )
 
   def customLessEntryPoints(base: File): PathFinder = (
@@ -38,5 +37,5 @@ object ApplicationBuild extends Build {
     ),
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
     javascriptEntryPoints <<= baseDirectory(customJSEntryPoints)
-  )
+  ).dependsOn(RootProject( uri("git://github.com/freekh/play-slick.git") ))
 }

@@ -1,7 +1,5 @@
 package controllers
 
-import anorm._
-
 import play.api._
 import play.api.mvc._
 
@@ -11,7 +9,7 @@ import play.api.data.Forms._
 import play.api.libs.json._
 import play.api.libs.json.Json._
 
-import models.System
+import models.Systems._
 
 object Systems extends Controller {
   val systemForm = Form(
@@ -23,11 +21,11 @@ object Systems extends Controller {
   }
 
   def list = Action {
-    Ok(views.html.systems.list(System.all()))
+    Ok(views.html.systems.list(models.Systems.all()))
   }
 
   def show(id: Long) = Action {
-    System.findById(id).map { system =>
+    models.Systems.findById(id).map { system =>
       Ok(views.html.systems.show(system))
     }.getOrElse(NotFound)
   }
@@ -41,16 +39,16 @@ object Systems extends Controller {
       formWithErrors =>
         BadRequest(views.html.systems.create(formWithErrors)),
       label =>
-        System.create(label).map {
+        models.Systems.create(label).map {
           system => Redirect(routes.Systems.show(system.id.get))
         }.getOrElse {
-          BadRequest(views.html.systems.list(System.all())) // TODO : print error
+          BadRequest(views.html.systems.list(models.Systems.all())) // TODO : print error
         }
       )
   }
 
   def delete(id: Long) = Action {
-    System.delete(id)
+    models.Systems.deleteById(id)
     Redirect(routes.Systems.list)
   }
 }

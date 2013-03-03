@@ -3,66 +3,44 @@ package models
 import scalaz._
 import Scalaz._
 import java.util.Date
-
-import anorm._
-import anorm.SqlParser._
+import java.sql.Timestamp
 
 import play.api.db._
 import play.api.Play.current
 
-case class MetricValue(id: Pk[Long], datetime: Date, value: Long, metricId: Long, runId: Long)
+import play.api.db.slick.Config.driver.simple._
+import play.api.db.slick.DB
 
-object MetricValue {
-  val metricValue = {
-    get[Pk[Long]]("metric_value.id") ~
-    get[Date]("metric_value.datetime") ~
-    get[Long]("metric_value.value") ~
-    get[Long]("metric_value.metric_id") ~
-    get[Long]("metric_value.run_id") map {
-      case id~datetime~value~metricId~runId =>
-        MetricValue(id, new Date(datetime.getTime), value, metricId, runId)
-    }
+case class MetricValue(id: Option[Long] = None, datetime: Timestamp, value: Long, metricId: Long, runId: Long)
+
+object MetricValues extends Table[MetricValue]("metric_value") {
+  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+  def datetime = column[Timestamp]("datetime")
+  def value = column[Long]("value")
+  def metricId = column[Long]("metric_id")
+  def metric = foreignKey("metric_id", metricId, Metrics)(_.id)
+  def runId = column[Long]("run_id")
+  def run = foreignKey("run_id", runId, Runs)(_.id)
+  def * = id.? ~ datetime ~ value ~ metricId ~ runId <>(
+    { t => MetricValue(t._1, t._2, t._3, t._4, t._5) },
+    { metricValue: MetricValue => Some((None, metricValue.datetime, metricValue.value,
+          metricValue.metricId, metricValue.runId)) })
+
+  def insert(datetime: Timestamp, value: Long, metricId: Long, runId: Long): Option[MetricValue] = DB.withSession { implicit session =>
+    val metricValue = MetricValue(None, datetime, value, metricId, runId)
+    val metricValueId = MetricValues.* returning MetricValues.id insert(metricValue)
+    Some(metricValue.copy(id=Some(metricValueId)))
   }
 
-  val nullableMetricValue = {
-    get[Option[Pk[Long]]]("metric_value.id") ~
-    get[Option[Date]]("metric_value.datetime") ~
-    get[Option[Long]]("metric_value.value") ~
-    get[Option[Long]]("metric_value.metric_id") ~
-    get[Option[Long]]("metric_value.run_id") map {
-      case None~None~None~None~None => None
-      case Some(id)~Some(datetime)~Some(value)~Some(metricId)~Some(runId) =>
-        Some(MetricValue(id, new Date(datetime.getTime), value, metricId, runId))
-    }
-  }
-
-  def insert(metricValue: MetricValue): Option[MetricValue] = {
-    DB.withConnection { implicit c =>
-      SQL("""
-        INSERT INTO metric_value (datetime, value, metric_id, run_id)
-        VALUES ({datetime}, {value}, {metric}, {run})
-        """).on(
-        'datetime -> metricValue.datetime,
-        'value -> metricValue.value,
-        'metric -> metricValue.metricId,
-        'run -> metricValue.runId
-      ).executeInsert().map { id =>
-        metricValue.copy(id = Id(id))
-     }
-    }
-  }
-
-  def deleteByRun(metricId: Long, runId: Long) {
-    DB.withConnection { implicit c =>
-      SQL("DELETE FROM metric_value WHERE metric_id = {metric} AND run = {run}").on(
-        'metric -> metricId,
-        'run -> runId
-      ).executeUpdate()
-    }
+  def deleteByRun(metricId: Long, runId: Long) = DB.withSession { implicit session =>
+    (
+      for { metricValue <- MetricValues if (metricValue.metricId === metricId) }
+      yield (metricValue)
+    ).delete
   }
 
   def create(runId: Long, metricId: Long, timestamp: Date, value: Long): ValidationNEL[String, MetricValue] = {
-    MetricValue.insert(MetricValue(NotAssigned, timestamp, value, metricId, runId))
+    insert(new Timestamp(timestamp.getTime), value, metricId, runId)
       .toSuccess(NonEmptyList("An error occured while creating a MetricValue"))
   }
 }

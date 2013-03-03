@@ -1,6 +1,5 @@
 package controllers
 
-import anorm._
 import java.util.Date
 
 import play.api._
@@ -16,7 +15,7 @@ import play.api.libs.json.Json._
 import play.api.libs.functional.syntax._
 
 import models._
-import models.Run._
+import models.Runs._
 
 object Runs extends Controller {
   val JSON_ERROR = Map("status" -> toJson("KO"))
@@ -26,20 +25,20 @@ object Runs extends Controller {
   private def jsonError(messages: List[String]) = toJson(JSON_ERROR.updated("messages", toJson(messages)))
 
   def list(systemId: Long) = Action {
-    Ok(views.html.runs.list(Run.findBySystem(systemId)))
+    Ok(views.html.runs.list(models.Runs.findBySystem(systemId)))
   }
 
   def show(id: Long) = Action {
-    Run.findById(id).map { run =>
+    models.Runs.findById(id).map { run =>
       Ok(views.html.runs.show(run))
     }.getOrElse(NotFound)
   }
 
   def newRun(systemId: Long) = Action(parse.json) { request =>
     request.body.validate[JsonRun].map { jsonRun =>
-      Run.fromJson(jsonRun, systemId).fold(
+      models.Runs.fromJson(jsonRun, systemId).fold(
         errors => InternalServerError(jsonError(errors.list)),
-        run => Ok(toJson(Map("id" -> run.id.get)))
+        runId => Ok(toJson(Map("id" -> runId)))
       )
     }.recoverTotal {
       error => BadRequest(JsError.toFlatJson(error))
@@ -47,7 +46,7 @@ object Runs extends Controller {
   }
 
   def delete(id: Long) = Action {
-    Run.delete(id)
+    models.Runs.deleteById(id)
     Redirect(routes.Systems.list) // TODO
   }
 }
